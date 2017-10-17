@@ -64,14 +64,14 @@ class WindowsBootstrapper(BootstrapperBase):
         #if self.platform == Platform.WINDOWS:
         #    # For wget
         #    self.install_mingwget_deps()
-        #-self.install_mingw()
-        #-self.remove_mingw_cpp()
-        #-self.add_non_prefixed_strings()
-        #-if self.platform == Platform.WINDOWS:
-        #-    # After mingw is beeing installed
-        #-    self.install_bin_deps()
-        #-self.install_gl_headers()
-        #-self.install_python_sdk()
+        self.install_mingw()
+        self.remove_mingw_cpp()
+        self.add_non_prefixed_strings()
+        if self.platform == Platform.WINDOWS:
+            # After mingw is beeing installed
+            self.install_bin_deps()
+        self.install_gl_headers()
+        self.install_python_sdk()
         self.install_buil_tools()
 
     def check_dirs(self):
