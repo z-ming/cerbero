@@ -37,6 +37,7 @@ MINGWGET_DEPS = ['msys-wget', 'msys-flex', 'msys-bison', 'msys-perl']
 GNOME_FTP = 'http://ftp.gnome.org/pub/gnome/binaries/win32/'
 WINDOWS_BIN_DEPS = ['intltool/0.40/intltool_0.40.4-1_win32.zip']
 
+PYTHON_SDK_PACKAGE='https://github.com/taoarch/cerbero/releases/download/tools-0.1/python27-windows.tar.bz2'
 
 class WindowsBootstrapper(BootstrapperBase):
     '''
@@ -63,14 +64,15 @@ class WindowsBootstrapper(BootstrapperBase):
         #if self.platform == Platform.WINDOWS:
         #    # For wget
         #    self.install_mingwget_deps()
-        self.install_mingw()
-        self.remove_mingw_cpp()
-        self.add_non_prefixed_strings()
-        if self.platform == Platform.WINDOWS:
-            # After mingw is beeing installed
-            self.install_bin_deps()
-        self.install_gl_headers()
-        self.install_python_sdk()
+        #-self.install_mingw()
+        #-self.remove_mingw_cpp()
+        #-self.add_non_prefixed_strings()
+        #-if self.platform == Platform.WINDOWS:
+        #-    # After mingw is beeing installed
+        #-    self.install_bin_deps()
+        #-self.install_gl_headers()
+        #-self.install_python_sdk()
+        self.install_buil_tools()
 
     def check_dirs(self):
         if not os.path.exists(self.prefix):
@@ -106,9 +108,8 @@ class WindowsBootstrapper(BootstrapperBase):
         #                                         'windows-external-sdk.git'),
         #           tmp_dir)
 
-        url = 'https://github.com/Mingyiz/cerbero/releases/download/untagged-6857bfba99b7d813cf5b/python27-windows.tar.bz2'
         path = os.path.join(tmp_dir,'python27-windows.tar.bz2')
-        shell.download(url,path)
+        shell.download(PYTHON_SDK_PACKAGE,path)
         shell.unpack(path,tmp_dir)
 
         python_headers = os.path.join(self.prefix, 'include', 'Python2.7')
@@ -119,20 +120,20 @@ class WindowsBootstrapper(BootstrapperBase):
         python_libs = to_unixpath(python_libs)
 
         temp = to_unixpath(os.path.abspath(tmp_dir))
-        shell.call('cp -f %s/windows-external-sdk/python27/%s/include/* %s' %
+        shell.call('cp -f %s/%s/include/* %s' %
                   (temp, self.version, python_headers))
-        shell.call('cp -f %s/windows-external-sdk/python27/%s/lib/* %s' %
+        shell.call('cp -f %s/%s/lib/* %s' %
                   (temp, self.version, python_libs))
         try:
             os.remove('%s/lib/python.dll' % self.prefix)
         except:
             pass
         shell.call('ln -s python27.dll python.dll', '%s/lib' % self.prefix)
-        shutil.rmtree(tmp_dir)
+        #shutil.rmtree(tmp_dir)
 
-    def install_mingwget_deps(self):
-        for dep in MINGWGET_DEPS:
-            shell.call('mingw-get install %s' % dep)
+    #def install_mingwget_deps(self):
+    #    for dep in MINGWGET_DEPS:
+    #        shell.call('mingw-get install %s' % dep)
 
     def install_gl_headers(self):
         m.action("Installing wglext.h")
@@ -208,6 +209,13 @@ class WindowsBootstrapper(BootstrapperBase):
         if os.path.exists(strings):
             os.remove(strings)
         shutil.copy(p_strings, strings)
+
+    def install_buil_tools(self):
+        #gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2
+        from cerbero.tools import cpm
+        m.message('install build-tools')
+        cpm.Install(self.config.build_tools_prefix, 'gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2')
+        m.message('build-tools installed !')
 
 
 def register_all():

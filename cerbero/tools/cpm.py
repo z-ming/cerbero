@@ -133,6 +133,7 @@ class PkgFile(object):
 
                 if content is not None:
                     path = os.path.join(self._root,aname)
+                    print '->>',path
                     d = os.path.dirname(path)
                     if not os.path.exists(d):
                         os.makedirs(d)
@@ -190,6 +191,7 @@ class PkgFile(object):
 
     def extract(self):
         for m in self._tar.getmembers():
+            print m.name
             if not self._extract_hook_handler( m ):
                 self._tar.extract(m.name,self._root)
 
@@ -449,6 +451,7 @@ def Install(prefix, filename):
 #print 'done---'
 
 
+#Install('d:/instd','d:/taoarch/ming/cerbero/gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2')
 
 
 if __name__ == '__main__':

@@ -2,11 +2,13 @@
 import platform
 import os
 import shutil
+import cerbero
+
 from cerbero.utils import shell, _, fix_winpath, to_unixpath, git
 from cerbero.utils import messages as m
 
 #load auto config
-cac=None
+cac={'cerbero':cerbero}
 CERBERO_AUTO_CONFIG=None
 
 if not os.path.exists('cerbero.cac'):
@@ -16,18 +18,23 @@ if not os.path.exists('cerbero.cac'):
             shutil.copy(CERBERO_AUTO_CONFIG,'cerbero.cac')
         else:            
             shell.download(CERBERO_AUTO_CONFIG,'cerbero.cac')
-print os.path.exists('cerbero.cac')
+
 if os.path.exists('cerbero.cac'):
     import cerbero
-    d={}
-    cac =execfile('./cerbero.cac',d)
-    print d
-    print hasattr(d,'mirror')
-    print '**********',cac
+    path = os.path.abspath('cerbero.cac')
+    print 'Loading',path
+
+
+    execfile(path,cac)
 
 
 
 if platform.system() == 'Windows':
+    import cerbero.bootstrap.build_tools
+    import cerbero.bootstrap.hijack.build_tools
+    cerbero.bootstrap.build_tools.BuildTools = \
+    cerbero.bootstrap.hijack.build_tools.BuildTools
+
     #overwrite windows bootstrap with hijack one
     import cerbero.bootstrap.bootstrapper
     import cerbero.bootstrap.hijack.windows
@@ -35,11 +42,12 @@ if platform.system() == 'Windows':
 
 
 _old_shell_download = shell.download
-print cac,hasattr(cac,'mirror'),'@@@'
 
-if cac and hasattr(cac,'mirror'):
+if cac.get('mirror',None):
+
     def _hijack_download(url, destination=None, recursive=False, check_cert=True, overwrite=False):
-        mirror_url = cac.mirror(url)
+        check_cert = False
+        mirror_url = cac['mirror'](url)
         if mirror_url:
             m.message('%s has been redirect to %s.'%(url,mirror_url))
             _old_shell_download( mirror_url,destination,recursive,check_cert,overwrite)
