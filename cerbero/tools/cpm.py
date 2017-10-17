@@ -351,9 +351,12 @@ def _get_pkg_name(info):
     i = info.copy()
     if not info.get('prefix',None):
         i['prefix']=''
+
     if 'runtime' == info.get('type',None):
         i['type']=''
-    
+    elif 'devel' == info.get('type',None):
+        i['type']='-devel'
+        
     return "%(prefix)s%(name)s-%(platform)s-%(arch)s-%(version)s%(type)s" %i
 
 def Pack(prefix,output_dir, info, items=['']):
