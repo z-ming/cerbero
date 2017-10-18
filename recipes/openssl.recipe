@@ -81,6 +81,9 @@ class Recipe(recipe.Recipe):
         self._gen_pc()
             
     def _gen_pc(self):
+        libprefix=''
+        if self.config.target_platform == Platform.WINDOWS:
+            libprefix='lib'
 
         #PKG Config file
         pkgconfigdir = os.environ['PKG_CONFIG_LIBDIR']
@@ -89,7 +92,7 @@ class Recipe(recipe.Recipe):
         desc   ='Secure Sockets Layer and cryptography libraries',
         version= self.version,
         req    = 'libcrypto',
-        libs   = '-lssl',
+        libs   = '-l{0}ssl'.format(libprefix),
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('libssl', pkgconfigdir)
@@ -98,7 +101,7 @@ class Recipe(recipe.Recipe):
         desc   ='OpenSSL cryptography library',
         version= self.version,
         req    = '',
-        libs   = '-lcrypto',
+        libs   = '-l{0}crypto'.format(libprefix),
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('libcrypto', pkgconfigdir)
@@ -108,7 +111,7 @@ class Recipe(recipe.Recipe):
         desc   ='Secure Sockets Layer and cryptography libraries and tools',
         version= self.version,
         req    = '',
-        libs   = '-lcrypto -lssl',
+        libs   = '-l{0}crypto -l{0}ssl'.format(libprefix),
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('openssl', pkgconfigdir)
