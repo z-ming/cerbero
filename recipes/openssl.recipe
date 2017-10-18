@@ -52,7 +52,7 @@ class Recipe(recipe.Recipe):
             --prefix=%(prefix)s  --openssldir=%(openssldir)s'%{
                 'MSVS':self.VCVARS,
                 'ActivePerl':self.ActivePerl,
-                'prefix':'d:/tmp/openssl.root',#self.config.prefix,
+                'prefix':self.config.prefix,
                 'openssldir':'d:/tmp/openssl.dir',
                 'arch':arch
             },self.make_dir)
