@@ -22,7 +22,7 @@ from cerbero.commands import Command, register_command
 from cerbero.build.cookbook import CookBook
 from cerbero.build.oven import Oven
 from cerbero.utils import _, N_, ArgparseArgument
-from cerbero.tools.mkpkg import Packager
+from cerbero.tools.mkpkg import Packager, BuildTree
 
 class MKPkg(Command):
     doc = N_('Make package for modules')
@@ -32,6 +32,11 @@ class MKPkg(Command):
             args = [
                 ArgparseArgument('module', nargs='*',
                     help=_('name of the modules to make')),
+
+                ArgparseArgument('--type', type=str,
+                    default='receipe',choices=['receipe','package','sdk'],
+                    help=_('prefix of package file name')),
+                    
                 ArgparseArgument('--prefix', type=str,
                     default='',
                     help=_('prefix of package file name')),
@@ -64,33 +69,23 @@ class MKPkg(Command):
             Command.__init__(self, args)
 
     def run(self, config, args):
-        if self.force is None:
-            self.force = args.force
-        if self.no_deps is None:
-            self.no_deps = args.no_deps
-        self._get_package_receipes(config,args)
-        
-        return
+        bt = BuildTree(config)
+        receipes = args.module
+        if args.type == 'package':
+            all=[]
+            for i in receipes:
+                all +=bt.receipes(i)
+            receipes = all
 
-        for name in args.module:
+
+        elif args.type == 'sdk':
+            print 'SDK not support ,for now.'
+            return
+
+        for name in receipes:
             pkg = Packager(config,name)
             pkg.make( args.prefix,args.output_dir)
-
-    def _get_package_receipes(self,config,args):
-        from cerbero.packages.packagesstore import PackagesStore
-        ps = PackagesStore(config)
-        for p in ps.get_packages_list():
-            print p.name
-            print p.recipes_dependencies()
-            print '*********'
-            print p.deps
-            return
-        return ps.get_packages_list()
-
-
-
-
-        
+   
 
 
 register_command(MKPkg)

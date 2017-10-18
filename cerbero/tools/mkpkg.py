@@ -26,6 +26,8 @@ import json
 
 from cerbero.build.cookbook import CookBook
 from cerbero.tools.cpm import Pack
+from cerbero.packages.packagesstore import PackagesStore
+from cerbero.packages.package import SDKPackage
 
 class Packager(object):
 
@@ -89,3 +91,91 @@ class Packager(object):
         self._mkdevel(prefix,output_dir)
 
         #generate runtime
+
+def get_sdk_packages(config,name):
+    ''' '''
+    pkgs=[]
+    ps = PackagesStore(config)
+    for p in ps.get_packages_list():
+        if p.name == name and hasattr(p,'sdk_version'):
+            for name,req,selected in p.packages:
+                pkgs.append(name)
+            return pkgs
+    return None
+
+def get_receipes(config,pkg_name):
+    pkgs=[]
+    ps = PackagesStore(config)
+    pkg = ps.get_package(pkg_name)
+    deps = ps.get_package_deps( pkg_name, True)
+    print '====>',deps
+    for d in deps:
+        print d.name
+    receipes = pkg.recipes_dependencies()
+    print receipes
+    #return pkg.get_package()
+
+
+
+
+class BuildTree(object):
+
+    def __init__(self, config):
+        self.config = config
+        self.cookbook = CookBook(config)
+        self.store = PackagesStore(config)
+        self._SDKs={'':set()}
+        self._PACKAGEs={'':set()}
+        
+        self.init()
+
+
+
+    def init(self):
+
+        #construct SDK tree first
+        for pkg in self.store.get_packages_list():
+            if not isinstance (pkg,SDKPackage):
+                continue
+            deps = self._SDKs.get(pkg.name,set())
+            for name, required, selected in pkg.packages:
+                if name not in deps:
+                    deps.add(name)
+            self._SDKs[pkg.name] =deps
+
+        for pkg in self.store.get_packages_list():
+            if isinstance (pkg,SDKPackage):
+                continue
+            sdk = self.get_package_sdk(pkg.name)
+            if sdk is not None:
+                self._SDKs[sdk].add(pkg.name)
+
+
+
+
+    def receipes(self,pkg_name,recursive=False):
+        ''' get package receipes '''
+        deps = self.store.get_package_deps( pkg_name, False)
+        package = self.store.get_package(pkg_name)
+        all = package.recipes_dependencies()
+        if not recursive:
+            for pkg in deps:
+                r = pkg.recipes_dependencies()
+                all = list(set(all).difference(set(r)))
+        return all
+
+    def packages(self,sdk_name='' ):
+        ''' get sdk packages  '''
+        return self._SDKs.get(sdk_name,None)
+
+    def SDKs(self,name):
+        return self._SDKs
+        
+
+    def get_package_sdk(self,pkg_name):
+        for name, pkgs in self._SDKs.viewitems():
+            if pkg_name in pkgs:
+                return name
+        return None
+
+
