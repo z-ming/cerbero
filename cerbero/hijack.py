@@ -30,15 +30,21 @@ if os.path.exists('cerbero.cac'):
 
 
 if platform.system() == 'Windows':
-    import cerbero.bootstrap.build_tools
-    import cerbero.bootstrap.hijack.build_tools
-    cerbero.bootstrap.build_tools.BuildTools = \
-    cerbero.bootstrap.hijack.build_tools.BuildTools
+    #import cerbero.bootstrap.build_tools
+    #import cerbero.bootstrap.hijack.build_tools
+    #cerbero.bootstrap.build_tools.BuildTools = \
+    #cerbero.bootstrap.hijack.build_tools.BuildTools
 
     #overwrite windows bootstrap with hijack one
     import cerbero.bootstrap.bootstrapper
     import cerbero.bootstrap.hijack.windows
     cerbero.bootstrap.hijack.windows.register_all()
+
+    import cerbero.build.build
+    import cerbero.build.hijack.cmake
+    cerbero.build.build.BuildType.AUTOCMAKE= \
+    cerbero.build.hijack.cmake.AutoCMake
+
 
 
 _old_shell_download = shell.download

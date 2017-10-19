@@ -34,8 +34,8 @@ class MKPkg(Command):
                     help=_('name of the modules to make')),
 
                 ArgparseArgument('--type', type=str,
-                    default='receipe',choices=['receipe','package','sdk'],
-                    help=_('prefix of package file name')),
+                    default='receipe',choices=['receipe','package','sdk','build-tools'],
+                    help=_('type of the moudle')),
                     
                 ArgparseArgument('--prefix', type=str,
                     default='',
@@ -69,6 +69,12 @@ class MKPkg(Command):
             Command.__init__(self, args)
 
     def run(self, config, args):
+        if args.type == 'build-tools':
+            self._build_tools( config ,args )
+            return
+
+
+
         bt = BuildTree(config)
         receipes = args.module
         if args.type == 'package':
@@ -85,6 +91,26 @@ class MKPkg(Command):
         for name in receipes:
             pkg = Packager(config,name)
             pkg.make( args.prefix,args.output_dir)
+
+    def _build_tools(self, config, args):
+        bt = BuildTree(config)
+        pkg = bt.package('gstreamer-1.0')
+        print config.build_tools_prefix
+        assert pkg.sdk_version == '1.0'
+        
+        
+        info ={'name':'build-tools',
+        'platform':config.platform,
+        'arch':config.arch,
+        'version':pkg.version,
+        'type':'runtime',
+        'prefix':args.prefix,
+        'deps':[] }
+
+        from cerbero.tools.cpm import Pack
+
+
+        Pack(config.build_tools_prefix,args.output_dir,info )
    
 
 

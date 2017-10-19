@@ -170,6 +170,9 @@ class PkgFile(object):
                     #aname = '%s/%s/%s'%(arcname,middle,filename)
                     fpath = os.path.join(root,filename)
                     aname = _rpath(fpath,self._root)
+                    print 'fpath',fpath
+                    print 'aname',aname
+                    print 'filename',filename
                     if not self._add_hook_handler(aname):                        
                         self._tar.add(fpath, aname)
 
@@ -285,6 +288,7 @@ def _la_normalize(pkg, arcname,buf):
 
         if name == 'libdir':
             val = _rpath(value,pkg._root)
+            print '*',value,pkg._root,val
             lines[i] = "libdir='%s'"%_join('${prefix}',val)
             
         options=[]

@@ -170,7 +170,9 @@ class BuildTree(object):
 
     def SDKs(self,name):
         return self._SDKs
-        
+
+    def package(self, name):
+        return self.store.get_package(name)    
 
     def get_package_sdk(self,pkg_name):
         for name, pkgs in self._SDKs.viewitems():

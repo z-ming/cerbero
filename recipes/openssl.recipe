@@ -75,6 +75,12 @@ class Recipe(recipe.Recipe):
             shell.cmd('%(MSVS)s && nmake.exe -f Makefile install'%{
                 'MSVS':self.VCVARS,
             },self.make_dir)
+            import os
+            os.rename(os.path.join(self.config.prefix,'lib/libssl.lib'),
+                        os.path.join(self.config.prefix,'lib/ssl.lib'))
+            os.rename(os.path.join(self.config.prefix,'lib/libcrypto.lib'),
+                        os.path.join(self.config.prefix,'lib/crypto.lib'))
+
         else:
             super(Recipe,self).configure()
 
@@ -92,7 +98,7 @@ class Recipe(recipe.Recipe):
         desc   ='Secure Sockets Layer and cryptography libraries',
         version= self.version,
         req    = 'libcrypto',
-        libs   = '-l{0}ssl'.format(libprefix),
+        libs   = '-lssl',
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('libssl', pkgconfigdir)
@@ -101,7 +107,7 @@ class Recipe(recipe.Recipe):
         desc   ='OpenSSL cryptography library',
         version= self.version,
         req    = '',
-        libs   = '-l{0}crypto'.format(libprefix),
+        libs   = '-lcrypto',
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('libcrypto', pkgconfigdir)
@@ -111,7 +117,7 @@ class Recipe(recipe.Recipe):
         desc   ='Secure Sockets Layer and cryptography libraries and tools',
         version= self.version,
         req    = '',
-        libs   = '-l{0}crypto -l{0}ssl'.format(libprefix),
+        libs   = '-lcrypto -lssl',
         cflags = '-I${includedir}',
         prefix = self.config.prefix
         ).save('openssl', pkgconfigdir)
