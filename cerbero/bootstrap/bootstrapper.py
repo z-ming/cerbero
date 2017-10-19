@@ -44,7 +44,7 @@ class Bootstrapper (object):
         if instal_build_tools:
             bs =[]
             from cerbero.tools import cpm
-            cpm.Install(self.config.build_tools_prefix, instal_build_tools)
+            cpm.Install(config.build_tools_prefix, instal_build_tools)
 
 
         target_distro = config.target_distro

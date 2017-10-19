@@ -72,7 +72,6 @@ class BuildTools (BootstrapperBase):
         if self.config.platform == Platform.WINDOWS:
             self.BUILD_TOOLS = []
             self.PLAT_BUILD_TOOLS={}
-            print 'Window hijack boottools'
 
 
 

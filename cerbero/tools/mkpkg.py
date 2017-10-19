@@ -28,6 +28,7 @@ from cerbero.build.cookbook import CookBook
 from cerbero.tools.cpm import Pack
 from cerbero.packages.packagesstore import PackagesStore
 from cerbero.packages.package import SDKPackage
+from cerbero.utils import messages as m
 
 class Packager(object):
 
@@ -43,8 +44,8 @@ class Packager(object):
     def _deps(self):
         deps=[]
         runtimes = self.cookbook._runtime_deps()
-        
-        for receipe in self.cookbook.list_recipe_deps(self.name):
+        rdeps = self.cookbook.list_recipe_deps(self.name)
+        for receipe in rdeps:
             if self.name == receipe.name or receipe.name in runtimes:
                 continue
             deps.append( '%s@%s'%(receipe.name,receipe.version) )
@@ -90,30 +91,6 @@ class Packager(object):
         self._mkruntime(prefix,output_dir)
         self._mkdevel(prefix,output_dir)
 
-        #generate runtime
-
-def get_sdk_packages(config,name):
-    ''' '''
-    pkgs=[]
-    ps = PackagesStore(config)
-    for p in ps.get_packages_list():
-        if p.name == name and hasattr(p,'sdk_version'):
-            for name,req,selected in p.packages:
-                pkgs.append(name)
-            return pkgs
-    return None
-
-def get_receipes(config,pkg_name):
-    pkgs=[]
-    ps = PackagesStore(config)
-    pkg = ps.get_package(pkg_name)
-    deps = ps.get_package_deps( pkg_name, True)
-    print '====>',deps
-    for d in deps:
-        print d.name
-    receipes = pkg.recipes_dependencies()
-    print receipes
-    #return pkg.get_package()
 
 
 

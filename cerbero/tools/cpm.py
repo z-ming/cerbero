@@ -43,7 +43,10 @@ def _rpath(path, prefix):
     calc the varpath corresponding self.prefix
     '''
     var=os.path.normpath(path).replace('\\','/')
-    assert os.path.isabs(path)
+    assert os.path.isabs(path),'''
+    path =%s
+    prefix =%s
+    '''%(path,prefix)
     assert os.path.isabs(prefix),'''
     _rpath prefix should be abs (%s)
     '''%prefix
@@ -133,7 +136,6 @@ class PkgFile(object):
 
                 if content is not None:
                     path = os.path.join(self._root,aname)
-                    print '->>',path
                     d = os.path.dirname(path)
                     if not os.path.exists(d):
                         os.makedirs(d)
@@ -170,9 +172,7 @@ class PkgFile(object):
                     #aname = '%s/%s/%s'%(arcname,middle,filename)
                     fpath = os.path.join(root,filename)
                     aname = _rpath(fpath,self._root)
-                    print 'fpath',fpath
-                    print 'aname',aname
-                    print 'filename',filename
+
                     if not self._add_hook_handler(aname):                        
                         self._tar.add(fpath, aname)
 
@@ -194,7 +194,6 @@ class PkgFile(object):
 
     def extract(self):
         for m in self._tar.getmembers():
-            print m.name
             if not self._extract_hook_handler( m ):
                 self._tar.extract(m.name,self._root)
 
@@ -206,9 +205,9 @@ class PkgFile(object):
 
 
 
+P_SYMBOL=re.compile(r'\w+')
 
-
-
+P_PATH=re.compile(r'(/\w\:[\w/\\]+)|(/\w[\w/]+)')
 
 
 
@@ -249,28 +248,34 @@ def _pc_normalize(pkg, arcname,buf):
     for name, val in vars.viewitems():
         v = val['value']
         n = val['lineno']
-        if not v.startswith('$'):
+
+        if v.startswith('${prefix}'):
+            lines[n]='%s=%s'%(name,_join('${prefix}',v[len('${prefix}'):]))
+        elif P_PATH.match(v):
             rpath = _rpath( v, prefix )
             lines[n]='%s=%s'%(name,_join('${prefix}',prefix_suffix,rpath))
-        elif v.startswith('${prefix}'):
-            lines[n]='%s=%s'%(name,_join('${prefix}',v[len('${prefix}'):]))
 
     
 
-    if flags.has_key('Libs.private'):
-        val = flags['Libs.private']['value']
-        lineno = flags['Libs.private']['lineno']
-        
-        for field in val.split():
-            if field.startswith('-L'):
-                d = field[2:]
-                if d.startswith('${'):
-                    continue
-                rpath = _rpath( d , self._prefix )
-                line +=_join(' -L${prefix}',rpath)
-            else:
-                line +=' %s'%field
-        lines[lineno] = 'Libs.private:%s'%line
+    for flag in ['Libs.private','Cflags']:
+        if flags.has_key(flag):
+            val = flags[flag]['value']
+            lineno = flags[flag]['lineno']
+            line=''
+            fields =val.split()
+            for field in fields:
+                opt = field[:2]
+                if opt in ['-L','-I']:
+                    d = field[2:]
+                    if d.startswith('${'):
+                        line +=' %s'%field
+                        continue
+                    rpath = _rpath( d , prefix )
+                    line +=_join(' %s${prefix}'%opt,rpath)
+                else:
+                    line +=' %s'%field
+
+            lines[lineno] = '%s:%s'%(flag,line)
     return '\n'.join(lines),arcname
 
 
@@ -288,7 +293,7 @@ def _la_normalize(pkg, arcname,buf):
 
         if name == 'libdir':
             val = _rpath(value,pkg._root)
-            print '*',value,pkg._root,val
+            
             lines[i] = "libdir='%s'"%_join('${prefix}',val)
             
         options=[]
@@ -440,25 +445,6 @@ def Install(prefix, filename):
     pkg.addhook( r'^\.desc$',_noop)
     pkg.extract()
     pkg.close()
-
-
-#Install('d:/instd','d:/build-tools-windows-x86_64-1.12.3.tar.bz2')
-#info ={
-#    'name':'build-tools-test',
-#    'platform': 'windows',
-#    'arch':'x86_64',
-#    'version':'1.12.3',
-#    'type':'runtime'
-#}
-#
-#Pack(r'D:\github.com\cerbero\build\build-tools',
-#'d:/',
-#info,
-#[''])
-#print 'done---'
-
-
-#Install('d:/instd','d:/taoarch/ming/cerbero/gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2')
 
 
 if __name__ == '__main__':

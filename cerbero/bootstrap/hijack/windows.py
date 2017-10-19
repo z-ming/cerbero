@@ -72,7 +72,7 @@ class WindowsBootstrapper(BootstrapperBase):
             self.install_bin_deps()
         self.install_gl_headers()
         self.install_python_sdk()
-        self.install_buil_tools()
+
 
     def check_dirs(self):
         if not os.path.exists(self.prefix):
@@ -209,13 +209,6 @@ class WindowsBootstrapper(BootstrapperBase):
         if os.path.exists(strings):
             os.remove(strings)
         shutil.copy(p_strings, strings)
-
-    def install_buil_tools(self):
-        #gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2
-        from cerbero.tools import cpm
-        m.message('install build-tools')
-        cpm.Install(self.config.build_tools_prefix, 'gstreamer-build-tools-windows-x86_64-1.12.3.tar.bz2')
-        m.message('build-tools installed !')
 
 
 def register_all():

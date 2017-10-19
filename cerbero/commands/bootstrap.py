@@ -36,7 +36,7 @@ class Bootstrap(Command):
         Command.__init__(self, args)
 
     def run(self, config, args):
-        bootstrappers = Bootstrapper(config, args.build_tools_only,args.instal_build_tools)
+        bootstrappers = Bootstrapper(config, args.build_tools_only,args.install_build_tools)
         for bootstrapper in bootstrappers:
             bootstrapper.start()
 

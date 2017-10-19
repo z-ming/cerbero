@@ -23,6 +23,7 @@ from cerbero.build.cookbook import CookBook
 from cerbero.build.oven import Oven
 from cerbero.utils import _, N_, ArgparseArgument
 from cerbero.tools.mkpkg import Packager, BuildTree
+from cerbero.utils import messages as m
 
 class MKPkg(Command):
     doc = N_('Make package for modules')
@@ -79,23 +80,30 @@ class MKPkg(Command):
         receipes = args.module
         if args.type == 'package':
             all=[]
-            for i in receipes:
-                all +=bt.receipes(i)
+            for pkg in args.module:
+                all +=bt.receipes(pkg)
             receipes = all
 
 
         elif args.type == 'sdk':
-            print 'SDK not support ,for now.'
-            return
+            all=[]
+            for sdk in args.module:
+                for pkg in bt.packages(sdk):
+                    all += bt.receipes(pkg)
+            receipes = all
+
+        m.message('%d receipe wil be packed'%len(receipes))
+
 
         for name in receipes:
+            m.message('pack %s'%name)
             pkg = Packager(config,name)
             pkg.make( args.prefix,args.output_dir)
 
     def _build_tools(self, config, args):
         bt = BuildTree(config)
         pkg = bt.package('gstreamer-1.0')
-        print config.build_tools_prefix
+
         assert pkg.sdk_version == '1.0'
         
         

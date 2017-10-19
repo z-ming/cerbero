@@ -49,8 +49,6 @@ class AutoCMake (MakefilesBase):
 
     def __init__(self):
         MakefilesBase.__init__(self)
-        if not hasattr(self.config,'build_type'):
-            self.config.build_type='release'
 
         if self.config.target_platform == Platform.WINDOWS:
             self.runtime_dep=True

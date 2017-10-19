@@ -76,6 +76,7 @@ class Config (object):
 
     _properties = ['platform', 'target_platform', 'arch', 'target_arch',
                    'prefix', 'recipes_dir', 'host', 'build', 'target',
+                   'build_type',
                    'sources', 'local_sources', 'lib_suffix', 'git_root',
                    'distro', 'target_distro', 'environ_dir', 'cache_file',
                    'toolchain_prefix', 'toolchain_version', 'distro_version',
@@ -339,6 +340,8 @@ class Config (object):
         self.set_property('extra_build_tools', {})
         self.set_property('distro_packages_install', True)
         self.set_property('interactive', True)
+        self.set_property('build_type', 'release')
+        
 
     def set_property(self, name, value, force=False):
         if name not in self._properties:
