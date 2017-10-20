@@ -388,7 +388,9 @@ def Pack(prefix,output_dir, info, items=['']):
     pkg.close()
 
 
-
+def filename(info,ext='.tar.bz2'):
+    ''' get filename according info '''
+    return _get_pkg_name(info) +ext
 
 
 

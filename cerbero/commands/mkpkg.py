@@ -17,13 +17,28 @@
 # Boston, MA 02111-1307, USA.
 
 
-#from cerbero.oven import Oven
+import os
+import hashlib
+
 from cerbero.commands import Command, register_command
 from cerbero.build.cookbook import CookBook
 from cerbero.build.oven import Oven
 from cerbero.utils import _, N_, ArgparseArgument
 from cerbero.tools.mkpkg import Packager, BuildTree
 from cerbero.utils import messages as m
+from cerbero.tools import cpm
+
+
+def SHA1(fineName, block_size=64 * 1024):
+  with open(fineName, 'rb') as f:
+    sha1 = hashlib.sha1()
+    while True:
+      data = f.read(block_size)
+      if not data:
+        break
+      sha1.update(data)
+    digest = sha1.hexdigest()
+    return digest
 
 class MKPkg(Command):
     doc = N_('Make package for modules')
@@ -37,6 +52,10 @@ class MKPkg(Command):
                 ArgparseArgument('--type', type=str,
                     default='receipe',choices=['receipe','package','sdk','build-tools'],
                     help=_('type of the moudle')),
+
+                ArgparseArgument('--gen-release-only', action='store_true',
+                    default=False,
+                    help=_('generate release file only for the specify modules and check in output-dir')),
                     
                 ArgparseArgument('--prefix', type=str,
                     default='',
@@ -67,12 +86,33 @@ class MKPkg(Command):
 
             self.force = force
             self.no_deps = no_deps
+            
             Command.__init__(self, args)
 
     def run(self, config, args):
+        self.build_tree = BuildTree(config)
+        self.config = config
+        self.args = args
+
         if args.type == 'build-tools':
             self._build_tools( config ,args )
             return
+        receipes = self._get_receipes()
+
+        m.message('totoal %d receipes.'%len(receipes))
+
+        if not self.args.gen_release_only:
+            for name in receipes:
+                m.message('pack %s'%name)
+                pkg = Packager(config,name)
+                pkg.make( args.prefix,args.output_dir)
+
+
+        self._gen_release()
+
+
+
+        return
 
 
 
@@ -100,6 +140,24 @@ class MKPkg(Command):
             pkg = Packager(config,name)
             pkg.make( args.prefix,args.output_dir)
 
+    def _get_receipes(self):
+        bt = self.build_tree
+        receipes = self.args.module
+        if self.args.type == 'package':
+            all=[]
+            for pkg in receipes:
+                all +=bt.receipes(pkg)
+            return all
+
+        elif self.args.type == 'sdk':
+            all=[]
+            for sdk in receipes:
+                for pkg in bt.packages(sdk):
+                    all += bt.receipes(pkg)
+            return all
+        else:
+            return receipes
+
     def _build_tools(self, config, args):
         bt = BuildTree(config)
         pkg = bt.package('gstreamer-1.0')
@@ -119,6 +177,75 @@ class MKPkg(Command):
 
 
         Pack(config.build_tools_prefix,args.output_dir,info )
+
+    def _release_description(self):
+        info={    }
+
+        if self.args.type == 'sdk':
+            SDKs={}
+            for sdk in self.args.module:
+                version = self.build_tree.store.get_package(sdk).version
+
+                SDKs[sdk]=[{'version':version}]
+                packages=[]
+                for pkg in self.build_tree.packages(sdk):
+                    packages.append(pkg)
+                SDKs[sdk].append({'packages':packages})
+            info['SDK']=SDKs
+                    
+        
+        return info
+
+
+
+    def _gen_release(self):
+        release=[
+            {'Information':self._release_description()},
+            {'Platform': self.config.platform},
+            {'Arch':self.config.arch},
+        ]
+
+        receipes = self._get_receipes()
+        packages={}
+        cookbook = self.build_tree.cookbook
+        for name in receipes:    
+            receipe = cookbook.get_recipe(name)
+
+            pkg = packages.get(name,[])
+            pkg.append( {'Version': receipe.version}  )
+
+
+            for ptype in ['Runtime','Devel']:
+                info={'name':receipe.name,
+                'version': receipe.version,
+                'platform': self.config.platform,
+                'arch':self.config.arch,
+                'type':ptype.lower(),
+                'prefix':self.args.prefix
+                }                
+
+                filename = cpm.filename(info)
+                path = os.path.join(self.args.output_dir,filename)
+                assert os.path.exists(path),'''
+                package %s not exists!
+                '''%filename
+
+                pkg.append({ptype:{
+                    'Filename':filename,
+                    'SHA1':SHA1(path)                 
+                }})
+
+            packages[receipe.name] = pkg
+        release.append({'Packages': packages})
+
+        import yaml
+
+        f = open(os.path.join(self.args.output_dir,'release.yaml'),'w+')
+        yaml.dump(release,f ,default_flow_style=False)
+        f.close()
+
+
+
    
 
 
