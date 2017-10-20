@@ -200,9 +200,9 @@ class MKPkg(Command):
 
     def _gen_release(self):
         release=[
-            {'Information':self._release_description()},
             {'Platform': self.config.platform},
             {'Arch':self.config.arch},
+            {'Information':self._release_description()},
         ]
 
         receipes = self._get_receipes()
