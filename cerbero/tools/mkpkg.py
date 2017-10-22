@@ -25,7 +25,7 @@ import tarfile
 import json    
 
 from cerbero.build.cookbook import CookBook
-from cerbero.tools.cpm import Pack
+from cerbero.tools.cpm import Pack,Desc
 from cerbero.packages.packagesstore import PackagesStore
 from cerbero.packages.package import SDKPackage
 from cerbero.utils import messages as m
@@ -38,28 +38,33 @@ class Packager(object):
         self.name = name
         self.cookbook = CookBook(self.config)
         self.receipe = self.cookbook.get_recipe(name)
-        self.deps = self._deps()
+        self.desc = Desc()
+        self.desc.name = self.name
+        self.desc.platform = self.config.platform
+        self.desc.arch = self.config.arch
+        self.desc.version = self.receipe.version
+    
+        self.desc.deps=self._deps()
 
 
     def _deps(self):
-        deps=[]
+        deps={}
         runtimes = self.cookbook._runtime_deps()
         rdeps = self.cookbook.list_recipe_deps(self.name)
         for receipe in rdeps:
             if self.name == receipe.name or receipe.name in runtimes:
                 continue
-            deps.append( '%s@%s'%(receipe.name,receipe.version) )
-
+            deps[receipe.name]=receipe.version
         return deps
 
     def _mkruntime(self,prefix,output_dir):
-        info ={'name':self.name,
-               'platform':self.config.platform,
-               'arch':self.config.arch,
-               'version':self.receipe.version,
-               'type':'runtime',
-               'prefix':prefix,
-               'deps':self.deps }
+        #info ={'name':self.name,
+        #       'platform':self.config.platform,
+        #       'arch':self.config.arch,
+        #       'version':self.receipe.version,
+        #       'type':'runtime',
+        #       'prefix':prefix,
+        #       'deps':self.deps }
 
         items=[]
         for i in self.receipe.dist_files_list():
@@ -67,16 +72,19 @@ class Packager(object):
             if os.path.exists(path):
                 items.append(i)
 
-        Pack(self.config.prefix,output_dir,info ,items)
+        self.desc.prefix = prefix
+        self.desc.type = 'runtime'
+
+        Pack(self.config.prefix,output_dir,self.desc ,items)
         
     def _mkdevel(self,prefix,output_dir):
-        info ={'name':self.name,
-               'platform':self.config.platform,
-               'arch':self.config.arch,
-               'version':self.receipe.version,
-               'type':'devel',
-               'prefix':prefix,
-               'deps':self.deps }
+        #info ={'name':self.name,
+        #       'platform':self.config.platform,
+        #       'arch':self.config.arch,
+        #       'version':self.receipe.version,
+        #       'type':'devel',
+        #       'prefix':prefix,
+        #       'deps':self.deps }
 
         items=[]
         for i in self.receipe.devel_files_list():
@@ -84,7 +92,10 @@ class Packager(object):
             if os.path.exists(path):
                 items.append(i)
 
-        Pack(self.config.prefix,output_dir,info ,items)
+        self.desc.prefix = prefix
+        self.desc.type = 'devel'
+
+        Pack(self.config.prefix,output_dir,self.desc ,items)
 
     def make(self,prefix='',output_dir='.'):        
         odir = os.path.abspath( output_dir)

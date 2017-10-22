@@ -53,7 +53,7 @@ class MKPkg(Command):
                     default='receipe',choices=['receipe','package','sdk','build-tools'],
                     help=_('type of the moudle')),
 
-                ArgparseArgument('--gen-release-only', action='store_true',
+                ArgparseArgument('--packages-yaml-only', action='store_true',
                     default=False,
                     help=_('generate release file only for the specify modules and check in output-dir')),
                     
@@ -101,44 +101,18 @@ class MKPkg(Command):
 
         m.message('totoal %d receipes.'%len(receipes))
 
-        if not self.args.gen_release_only:
+        if not self.args.packages_yaml_only:
             for name in receipes:
                 m.message('pack %s'%name)
                 pkg = Packager(config,name)
                 pkg.make( args.prefix,args.output_dir)
 
 
-        self._gen_release()
+        self._gen_packages_yaml()
 
 
 
         return
-
-
-
-        bt = BuildTree(config)
-        receipes = args.module
-        if args.type == 'package':
-            all=[]
-            for pkg in args.module:
-                all +=bt.receipes(pkg)
-            receipes = all
-
-
-        elif args.type == 'sdk':
-            all=[]
-            for sdk in args.module:
-                for pkg in bt.packages(sdk):
-                    all += bt.receipes(pkg)
-            receipes = all
-
-        m.message('%d receipe wil be packed'%len(receipes))
-
-
-        for name in receipes:
-            m.message('pack %s'%name)
-            pkg = Packager(config,name)
-            pkg.make( args.prefix,args.output_dir)
 
     def _get_receipes(self):
         bt = self.build_tree
@@ -174,11 +148,12 @@ class MKPkg(Command):
         'deps':[] }
 
         from cerbero.tools.cpm import Pack
+        from cerbero.tools.cpm import Desc
 
 
         Pack(config.build_tools_prefix,args.output_dir,info )
 
-    def _release_description(self):
+    def _origin_description(self):
         info={    }
 
         if self.args.type == 'sdk':
@@ -196,14 +171,14 @@ class MKPkg(Command):
         
         return info
 
+    def _gen_packages_yaml(self):
+        from cerbero.tools.cpm import Pack,Desc
 
-
-    def _gen_release(self):
-        release=[
-            {'Platform': self.config.platform},
-            {'Arch':self.config.arch},
-            {'Information':self._release_description()},
-        ]
+        info={
+            'platform': self.config.platform,
+            'arch':self.config.arch,
+            'origin': self._origin_description()
+        }
 
         receipes = self._get_receipes()
         packages={}
@@ -211,40 +186,38 @@ class MKPkg(Command):
         for name in receipes:    
             receipe = cookbook.get_recipe(name)
 
-            pkg = packages.get(name,[])
-            pkg.append( {'Version': receipe.version}  )
+            pkg = packages.get(name,{})
+            pkg['version'] = receipe.version
 
 
-            for ptype in ['Runtime','Devel']:
-                info={'name':receipe.name,
-                'version': receipe.version,
-                'platform': self.config.platform,
-                'arch':self.config.arch,
-                'type':ptype.lower(),
-                'prefix':self.args.prefix
-                }                
+            for ptype in ['runtime','devel']:
+                desc = Desc()
+                desc.name = receipe.name
+                desc.version = receipe.version
+                desc.platform = self.config.platform
+                desc.arch = self.config.arch
+                desc.type = ptype
+                desc.prefix = self.args.prefix
+                      
 
-                filename = cpm.filename(info)
+                filename = desc.filename()
                 path = os.path.join(self.args.output_dir,filename)
                 assert os.path.exists(path),'''
                 package %s not exists!
                 '''%filename
 
-                pkg.append({ptype:{
-                    'Filename':filename,
-                    'SHA1':SHA1(path)                 
-                }})
+                pkg[ptype]={'filename':filename,
+                    'SHA1':SHA1(path) }
 
             packages[receipe.name] = pkg
-        release.append({'Packages': packages})
+        info['packages']= packages
 
         import yaml
 
-        f = open(os.path.join(self.args.output_dir,'release.yaml'),'w+')
-        yaml.dump(release,f ,default_flow_style=False)
+        f = open(os.path.join(self.args.output_dir,'Packages.yaml'),'w+')
+        data = yaml.dump(info,default_style=False,default_flow_style=False)
+        f.write(data)
         f.close()
-
-
 
    
 

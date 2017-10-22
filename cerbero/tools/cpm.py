@@ -24,6 +24,7 @@ import platform
 import tarfile
 import json 
 import StringIO
+import yaml
 
 def to_unixpath(path):
     if path[1] == ':':
@@ -69,6 +70,27 @@ class Error(Exception):
     def __init__(self,message):
         Exception.__init__(self)
         self.message=message   
+
+
+class PkgDesc(object):
+    ''' description of PkgFile utils '''
+        
+    def __init__(self, format ='yaml'):
+        self._format = format
+
+    def load(self, desc):
+        if type(desc) == type({}):
+            info = desc
+            self.name = info['name']
+            self.platform = info['platform']
+            self.arch = info['arch']
+            self.version = info['version']
+            self.type = info['type']
+            self.deps = info.get('deps',[])
+        
+
+        
+
 
 class PkgFile(object):
 
@@ -368,22 +390,69 @@ def _get_pkg_name(info):
         
     return "%(prefix)s%(name)s-%(platform)s-%(arch)s-%(version)s%(type)s" %i
 
-def Pack(prefix,output_dir, info, items=['']):
-    filename = _get_pkg_name(info) +'.tar.bz2'
-    path = os.path.join(output_dir,filename)
+class Desc(object):
+    ''' build package description '''
+
+    _properties=['name','platform',
+    'arch','version','type','prefix',
+    'deps']
+
+
+    def __init__(self,format='yaml'):
+        for name in self._properties:
+            setattr(self,name,None)
+        setattr(self,'deps',{})
+
+
+    def from_dict(self,desc):
+        for name ,value in desc.viewitems():
+            if name in self._properties:
+                setattr(self,name,value)
+    def to_dict(self):
+        desc={}
+        for name in self._properties:
+            desc[name] =getattr(self,name)
+        return desc
+
+
+
+
+    def load(self, document):
+        self.from_dict( yaml.load(document) )
+
+    def dump(self,stream=None):
+        return yaml.dump( self.to_dict(),stream,
+        default_style=False, default_flow_style=False)
+
+    def filename(self,ext='.tar.bz2'):
+        i = self.to_dict()
+        if 'runtime' == i.get('type','runtime'):
+            i['type']=''
+        else:
+            i['type']='-devel'
+
+        i['prefix']=i.get('prefix','')
+
+        return "%(prefix)s%(name)s-%(platform)s-%(arch)s-%(version)s%(type)s" %i + ext
+
+
+
+
+def Pack(prefix,output_dir, desc, items=['']):
+    #filename = _get_pkg_name(info) +'.tar.bz2'
+
+    path = os.path.join(output_dir,desc.filename())
 
     pkg = PkgFile(prefix)
     pkg.open(path,'w')
 
-    desc = json.dumps(info,indent=2)
-    pkg.addfile(desc,".desc")
+    #desc = json.dumps(info,indent=2)
+    pkg.addfile(desc.dump(),".desc")
 
     pkg.addhook( r'.*\.pc$',_pc_normalize)
     pkg.addhook( r'.*\.la$',_la_normalize)
     for i in items:
-        pkg.add(i)
- 
-    
+        pkg.add(i)    
 
     pkg.close()
 

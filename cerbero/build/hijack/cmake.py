@@ -51,7 +51,6 @@ class AutoCMake (MakefilesBase):
         MakefilesBase.__init__(self)
 
         if self.config.target_platform == Platform.WINDOWS:
-            self.runtime_dep=True
             self._remove_steps([BuildSteps.GEN_LIBFILES])
             self.VCVARS = mswin.vcvars(2015,self.config.target_arch)
 
