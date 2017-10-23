@@ -58,13 +58,6 @@ class Packager(object):
         return deps
 
     def _mkruntime(self,prefix,output_dir):
-        #info ={'name':self.name,
-        #       'platform':self.config.platform,
-        #       'arch':self.config.arch,
-        #       'version':self.receipe.version,
-        #       'type':'runtime',
-        #       'prefix':prefix,
-        #       'deps':self.deps }
 
         items=[]
         for i in self.receipe.dist_files_list():
@@ -78,13 +71,6 @@ class Packager(object):
         Pack(self.config.prefix,output_dir,self.desc ,items)
         
     def _mkdevel(self,prefix,output_dir):
-        #info ={'name':self.name,
-        #       'platform':self.config.platform,
-        #       'arch':self.config.arch,
-        #       'version':self.receipe.version,
-        #       'type':'devel',
-        #       'prefix':prefix,
-        #       'deps':self.deps }
 
         items=[]
         for i in self.receipe.devel_files_list():

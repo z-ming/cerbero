@@ -25,6 +25,10 @@ import tarfile
 import json 
 import StringIO
 import yaml
+import shutil
+
+from cerbero.utils import shell
+from cerbero.utils import messages as m
 
 def to_unixpath(path):
     if path[1] == ':':
@@ -71,24 +75,7 @@ class Error(Exception):
         Exception.__init__(self)
         self.message=message   
 
-
-class PkgDesc(object):
-    ''' description of PkgFile utils '''
-        
-    def __init__(self, format ='yaml'):
-        self._format = format
-
-    def load(self, desc):
-        if type(desc) == type({}):
-            info = desc
-            self.name = info['name']
-            self.platform = info['platform']
-            self.arch = info['arch']
-            self.version = info['version']
-            self.type = info['type']
-            self.deps = info.get('deps',[])
-        
-
+    
         
 
 
@@ -439,14 +426,12 @@ class Desc(object):
 
 
 def Pack(prefix,output_dir, desc, items=['']):
-    #filename = _get_pkg_name(info) +'.tar.bz2'
 
     path = os.path.join(output_dir,desc.filename())
 
     pkg = PkgFile(prefix)
     pkg.open(path,'w')
 
-    #desc = json.dumps(info,indent=2)
     pkg.addfile(desc.dump(),".desc")
 
     pkg.addhook( r'.*\.pc$',_pc_normalize)
@@ -518,6 +503,50 @@ def Install(prefix, filename):
     pkg.close()
 
 
+
+def load_yaml(location):
+    import yaml
+    
+    
+    path = ''
+    tmpd=None
+    if os.path.exists(location):
+        path = location        
+    else :
+        tmpd = tempfile.mkdtemp()
+        path = os.path.join(tmpd,'Build.yaml')
+        shell.download( location,path)
+    f = open(path,'rb')
+    info = yaml.load(f)
+    f.close()
+    if tmpd:
+        shutil.rmtree( tmpd)
+    return info
+
+def BuildInstall( prefix, location, cached ):
+
+    binfo = load_yaml(os.path.join(location,'Build.yaml'))
+
+    #install components
+    for components in binfo.get('component',{}):
+        for name, value in components.viewitems():
+            for ptype, comp in value.viewitems():
+                filename = value['filename']
+                url = os.path.join( location, filename )
+                path = url
+                if not os.path.exists(url):
+                    path = os.path.join(cached,filename)
+                    shell.download(url,path)
+                m.message('install %s'%filename)
+
+                Install(prefx, path)
+    m.message('Install Build done.')
+
+def BBInstall( prefix, location, cached ):
+    bbinfo = load_yaml(os.path.join(location,'BB.yaml'))
+
+
+    
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(prog='cpm')

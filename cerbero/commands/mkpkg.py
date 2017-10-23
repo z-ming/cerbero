@@ -53,9 +53,9 @@ class MKPkg(Command):
                     default='receipe',choices=['receipe','package','sdk','build-tools'],
                     help=_('type of the moudle')),
 
-                ArgparseArgument('--packages-yaml-only', action='store_true',
+                ArgparseArgument('--build-desc-only', action='store_true',
                     default=False,
-                    help=_('generate release file only for the specify modules and check in output-dir')),
+                    help=_('generate (components) build description file (in yaml format)')),
                     
                 ArgparseArgument('--prefix', type=str,
                     default='',
@@ -101,7 +101,7 @@ class MKPkg(Command):
 
         m.message('totoal %d receipes.'%len(receipes))
 
-        if not self.args.packages_yaml_only:
+        if not self.args.build_desc_only:
             for name in receipes:
                 m.message('pack %s'%name)
                 pkg = Packager(config,name)
@@ -210,11 +210,11 @@ class MKPkg(Command):
                     'SHA1':SHA1(path) }
 
             packages[receipe.name] = pkg
-        info['packages']= packages
+        info['component']= packages
 
         import yaml
 
-        f = open(os.path.join(self.args.output_dir,'Packages.yaml'),'w+')
+        f = open(os.path.join(self.args.output_dir,'Build.yaml'),'w+')
         data = yaml.dump(info,default_style=False,default_flow_style=False)
         f.write(data)
         f.close()
