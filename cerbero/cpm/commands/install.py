@@ -84,12 +84,12 @@ class Installer(Command):
         if args.type == 'build-tools':
             self._build_tools( config ,args )
             return
-        receipes = self._get_receipes()
+        recipes = self._get_recipes()
 
-        m.message('totoal %d receipes.'%len(receipes))
+        m.message('totoal %d recipes.'%len(recipes))
 
         if not self.args.build_desc_only:
-            for name in receipes:
+            for name in recipes:
                 m.message('pack %s'%name)
                 pkg = Packager(config,name)
                 pkg.make( args.prefix,args.output_dir)
@@ -101,23 +101,23 @@ class Installer(Command):
 
         return
 
-    def _get_receipes(self):
+    def _get_recipes(self):
         bt = self.build_tree
-        receipes = self.args.module
+        recipes = self.args.module
         if self.args.type == 'package':
             all=[]
-            for pkg in receipes:
-                all +=bt.receipes(pkg)
+            for pkg in recipes:
+                all +=bt.recipes(pkg)
             return all
 
         elif self.args.type == 'sdk':
             all=[]
-            for sdk in receipes:
+            for sdk in recipes:
                 for pkg in bt.packages(sdk):
-                    all += bt.receipes(pkg)
+                    all += bt.recipes(pkg)
             return all
         else:
-            return receipes
+            return recipes
 
     def _build_tools(self, config, args):
         bt = BuildTree(config)
@@ -167,20 +167,20 @@ class Installer(Command):
             'origin': self._origin_description()
         }
 
-        receipes = self._get_receipes()
+        recipes = self._get_recipes()
         packages={}
         cookbook = self.build_tree.cookbook
-        for name in receipes:    
-            receipe = cookbook.get_recipe(name)
+        for name in recipes:    
+            recipe = cookbook.get_recipe(name)
 
             pkg = packages.get(name,{})
-            pkg['version'] = receipe.version
+            pkg['version'] = recipe.version
 
 
             for ptype in ['runtime','devel']:
                 desc = Desc()
-                desc.name = receipe.name
-                desc.version = receipe.version
+                desc.name = recipe.name
+                desc.version = recipe.version
                 desc.platform = self.config.platform
                 desc.arch = self.config.arch
                 desc.type = ptype
@@ -196,7 +196,7 @@ class Installer(Command):
                 pkg[ptype]={'filename':filename,
                     'SHA1':SHA1(path) }
 
-            packages[receipe.name] = pkg
+            packages[recipe.name] = pkg
         info['component']= packages
 
         import yaml

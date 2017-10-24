@@ -35,7 +35,7 @@ class BuildSystem(object):
     _config =None
     _cookbook = None
     _store = None
-    _sdks=None
+    _SDKs=None
     _packages=None
 
     def __init__(self, config):
@@ -43,16 +43,15 @@ class BuildSystem(object):
             self._config = config
         else:
             assert self.config.arch == config.arch and \
-            self.config.platform = config.platform
+            self.config.platform == config.platform
 
-        assert config or self._config,
-        self.config = config
-        self.cookbook = CookBook(config)
-        self.store = PackagesStore(config)
-        self._SDKs={'':set()}
-        self._PACKAGEs={'':set()}
+        assert config or self._config
+#        self.config = config
+#        self.cookbook = CookBook(config)
+#        self.store = PackagesStore(config)
+#        self._SDKs={'':set()}
+#        self._PACKAGEs={'':set()}
         
-        self.init()
         
     def cookbook(self):
         if self._cookbook is None:
@@ -62,6 +61,7 @@ class BuildSystem(object):
     def store(self):
         if self._store is None:
             self._store = PackagesStore(self._config)
+        return self._store
 
     def SDKs(self):
         if self._SDKs is None:
@@ -69,7 +69,7 @@ class BuildSystem(object):
             self._SDKs={}
             pkgs={}
             #construct SDK tree first
-            for pkg in self.store.get_packages_list():
+            for pkg in store.get_packages_list():
                 if not isinstance (pkg,SDKPackage):
                     pkgs[pkg.name] = pkg
                     continue
@@ -84,18 +84,31 @@ class BuildSystem(object):
             assert self._packages
         return self._packages
 
-    def get_package_receipes(self,pkg_name, with_deps=False):
-        ''' get package receipes '''
+    def get_package_recipes(self,pkg_name, with_deps=False):
+        ''' get package recipes '''
         store = self.store()
 
         deps = store.get_package_deps( pkg_name, False)
-        package = self.store.get_package(pkg_name)
+        package = store.get_package(pkg_name)
         all = package.recipes_dependencies()
         if not with_deps:
             for pkg in deps:
                 r = pkg.recipes_dependencies()
                 all = list(set(all).difference(set(r)))
         return all
+    def recipe(self,name):
+        return self.cookbook().get_recipe(name)
+
+    def recipe_deps(self,name):
+        deps={}
+        for recipe in self.cookbook().list_recipe_deps(name):
+            if recipe.name == name:
+                continue
+            deps[recipe.name]=recipe.version
+        return deps
+
+        
+
 
 
 
@@ -131,8 +144,8 @@ class BuildSystem(object):
 #
 #
 #
-    #def receipes(self,pkg_name,recursive=False):
-    #    ''' get package receipes '''
+    #def recipes(self,pkg_name,recursive=False):
+    #    ''' get package recipes '''
     #    deps = self.store.get_package_deps( pkg_name, False)
     #    package = self.store.get_package(pkg_name)
     #    all = package.recipes_dependencies()

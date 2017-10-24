@@ -15,10 +15,13 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
+import platform
 import re
 from cerbero.utils import to_unixpath
 from cerbero.cpm.utils import path_join,relpath
 from cerbero.cpm import PkgFileProcessor
+
+P_PATH=re.compile(r'(/\w\:[\w/\\]+)|(/\w[\w/]+)')
 
 class Normalizer(PkgFileProcessor):
     PATTERN_VALUE=re.compile(r'^(?P<key>\w+)=(?P<value>.+)')
@@ -95,7 +98,7 @@ class Normalizer(PkgFileProcessor):
                         if d.startswith('${'):
                             line +=' %s'%field
                             continue
-                        rpath = relpath( d , prefix )
+                        rpath = relpath( d , self.rootd )
                         line +=path_join(' %s${prefix}'%opt,rpath)
                     else:
                         line +=' %s'%field

@@ -17,6 +17,7 @@
 
 import os
 import hashlib
+from cerbero.utils import shell, to_unixpath
 
 def SHA1(fineName, block_size=64 * 1024):
   with open(fineName, 'rb') as f:

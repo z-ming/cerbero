@@ -25,13 +25,14 @@ from cerbero.utils import _, N_, ArgparseArgument
 from cerbero.tools.mkpkg import Packager, BuildTree
 from cerbero.utils import messages as m
 from cerbero.cpm.utils import SHA1
-
-
+from cerbero.cpm.buildsystem import BuildSystem
+from cerbero.cpm.packager import  Description,Component
+from cerbero.cpm.packager import  Pack as MakePackage
 
 
 class Pack(Command):
     doc = N_('Package cerbero components')
-    name = 'cpm.pack'
+    name = 'cpm-pack'
 
     def __init__(self, force=None, no_deps=None):
             args = [
@@ -39,12 +40,12 @@ class Pack(Command):
                     help=_('name of the objects to pack')),
 
                 ArgparseArgument('--type', type=str,
-                    default='receipe',choices=['receipe','package','sdk','build-tools'],
+                    default='recipe',choices=['recipe','package','sdk','build-tools'],
                     help=_('type of the moudle')),
 
-                ArgparseArgument('--build-desc-only', action='store_true',
+                ArgparseArgument('--gen-desc-only', action='store_true',
                     default=False,
-                    help=_('generate (components) build description file (in yaml format)')),
+                    help=_('generate description file (in yaml format)')),
                     
                 ArgparseArgument('--prefix', type=str,
                     default='',
@@ -52,158 +53,145 @@ class Pack(Command):
 
                 ArgparseArgument('--output-dir', type=str,
                     default='.',
-                    help=_('directory of package to be output')),
-
-                ArgparseArgument('--missing-files', action='store_true',
-                    default=False,
-                    help=_('prints a list of files installed that are '
-                           'listed in the recipe')),
-                ArgparseArgument('--dry-run', action='store_true',
-                    default=False,
-                    help=_('only print commands instead of running them '))]
-            if force is None:
-                args.append(
-                    ArgparseArgument('--force', action='store_true',
-                        default=False,
-                        help=_('force the build of the recipe ingoring '
-                                    'its cached state')))
-            if no_deps is None:
-                args.append(
-                    ArgparseArgument('--no-deps', action='store_true',
-                        default=False,
-                        help=_('do not build dependencies')))
-
-            self.force = force
-            self.no_deps = no_deps
+                    help=_('directory of package to be output'))
+                ]
             
             Command.__init__(self, args)
 
     def run(self, config, args):
-        self.build_tree = BuildTree(config)
-        self.config = config
-        self.args = args
+        self.bs = BuildSystem(config)
+
 
         if args.type == 'build-tools':
             self._build_tools( config ,args )
             return
-        receipes = self._get_receipes()
 
-        m.message('totoal %d receipes.'%len(receipes))
+        recipes = self._get_recipes(config ,args)
 
-        if not self.args.build_desc_only:
-            for name in receipes:
-                m.message('pack %s'%name)
-                pkg = Packager(config,name)
-                pkg.make( args.prefix,args.output_dir)
+        m.message('totoal %d recipes.'%len(recipes))
+
+        if not args.gen_desc_only:
+            i=1
+            for name in recipes:
+                print '  %3d. %-20s'%(i,name),
+                component = Component( config, name)
+                component.make( args.prefix,args.output_dir)
+                print '   [OK]'
+                i +=1
+        self._gen_desc_yaml(config,args)
+        m.message(' done !')
 
 
-        self._gen_packages_yaml()
 
+    def _get_recipes(self,config,args):
+        bs = self.bs
 
-
-        return
-
-    def _get_receipes(self):
-        bt = self.build_tree
-        receipes = self.args.module
-        if self.args.type == 'package':
-            all=[]
-            for pkg in receipes:
-                all +=bt.receipes(pkg)
+        #bt = self.build_tree
+        all=[]
+        recipes = args.object
+        if args.type == 'package':
+            for pkg in args.object:
+                all += bs.get_package_recipes(pkg)
             return all
 
-        elif self.args.type == 'sdk':
+        elif args.type == 'sdk':
             all=[]
-            for sdk in receipes:
-                for pkg in bt.packages(sdk):
-                    all += bt.receipes(pkg)
+            SDKs = bs.SDKs()
+            packages = bs.Packages()
+            for sdk in args.object:
+                for name, required, selected in SDKs[sdk].packages:                    
+                    all +=bs.get_package_recipes( name )
             return all
         else:
-            return receipes
+            return recipes
 
     def _build_tools(self, config, args):
-        bt = BuildTree(config)
-        pkg = bt.package('gstreamer-1.0')
+        bs = self.bs
+        sdk = bs.SDKs()
+        gst = sdk['gstreamer-1.0']
 
-        assert pkg.sdk_version == '1.0'
+
+        #bt = BuildTree(config)
+        #pkg = bt.package('gstreamer-1.0')
+
+        assert gst.sdk_version == '1.0'
         
         
-        info ={'name':'build-tools',
+        desc = Description()
+        desc.from_dict({'name':'build-tools',
         'platform':config.platform,
         'arch':config.arch,
-        'version':pkg.version,
+        'version':gst.version,
         'type':'runtime',
-        'prefix':args.prefix,
-        'deps':[] }
+        'prefix':'gstreamer-',
+        'deps':[]})
 
-        from cerbero.tools.cpm import Pack
-        from cerbero.tools.cpm import Desc
+        MakePackage(config.build_tools_prefix,args.output_dir,desc )
 
+    def _origin_description(self,config ,args):
+        bs = self.bs
 
-        Pack(config.build_tools_prefix,args.output_dir,info )
+        info={}
 
-    def _origin_description(self):
-        info={    }
-
-        if self.args.type == 'sdk':
+        if args.type == 'sdk':
             SDKs={}
-            for sdk in self.args.module:
-                version = self.build_tree.store.get_package(sdk).version
+            for name in args.object:
+                sdk = bs.SDKs().get(name)
+                SDKs[name]={'version':sdk.version,'package':[]}
+                for pkgname, required, selected in sdk.packages:
+                    SDKs[name]['package'].append(pkgname)
 
-                SDKs[sdk]=[{'version':version}]
-                packages=[]
-                for pkg in self.build_tree.packages(sdk):
-                    packages.append(pkg)
-                SDKs[sdk].append({'packages':packages})
-            info['SDK']=SDKs
+            info={'SDK':SDKs}
+
+        elif args.type == 'package':
+            info={'package':args.object}
                     
         
         return info
 
-    def _gen_packages_yaml(self):
+    def _gen_desc_yaml(self,config,args):
         from cerbero.tools.cpm import Pack,Desc
 
         info={
-            'platform': self.config.platform,
-            'arch':self.config.arch,
-            'origin': self._origin_description()
+            'platform': config.platform,
+            'arch':config.arch,
+            'origin': self._origin_description(config,args)
         }
 
-        receipes = self._get_receipes()
-        packages={}
-        cookbook = self.build_tree.cookbook
-        for name in receipes:    
-            receipe = cookbook.get_recipe(name)
+        recipes = self._get_recipes(config,args)
+        components={}
+        for name in recipes:    
+            recipe = self.bs.recipe(name)
 
-            pkg = packages.get(name,{})
-            pkg['version'] = receipe.version
+            component = components.get(name,{})
+            component['version'] = recipe.version
 
 
-            for ptype in ['runtime','devel']:
-                desc = Desc()
-                desc.name = receipe.name
-                desc.version = receipe.version
-                desc.platform = self.config.platform
-                desc.arch = self.config.arch
-                desc.type = ptype
-                desc.prefix = self.args.prefix
+            for ctype in ['runtime','devel']:
+                desc = Description()
+                desc.name = recipe.name
+                desc.version = recipe.version
+                desc.platform = config.platform
+                desc.arch = config.arch
+                desc.type = ctype
+                desc.prefix = args.prefix
                       
 
                 filename = desc.filename()
-                path = os.path.join(self.args.output_dir,filename)
+                path = os.path.join(args.output_dir,filename)
                 assert os.path.exists(path),'''
                 package %s not exists!
                 '''%filename
 
-                pkg[ptype]={'filename':filename,
+                component[ctype]={'filename':filename,
                     'SHA1':SHA1(path) }
 
-            packages[receipe.name] = pkg
-        info['component']= packages
+            components[name] = component
+        info['component']= components
 
         import yaml
 
-        f = open(os.path.join(self.args.output_dir,'Build.yaml'),'w+')
+        f = open(os.path.join(args.output_dir,'Build.yaml'),'w+')
         data = yaml.dump(info,default_style=False,default_flow_style=False)
         f.write(data)
         f.close()
@@ -211,4 +199,4 @@ class Pack(Command):
    
 
 
-#register_command(MKPkg)
+register_command(Pack)

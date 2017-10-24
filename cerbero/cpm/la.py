@@ -15,6 +15,7 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
+import os
 import re
 
 from cerbero.utils import to_unixpath
@@ -23,7 +24,7 @@ from cerbero.cpm import PkgFileProcessor
 
 class Normalizer(PkgFileProcessor):
     P_libdir = re.compile(r"^(?P<key>libdir)=\'(?P<value>.+)\'")
-    P_libdir = re.compile(r"^(?P<key>dependency_libs)=\'(?P<value>.+)\'")
+    P_dependency_libs = re.compile(r"^(?P<key>dependency_libs)=\'(?P<value>.+)\'")
 
 
 
@@ -32,7 +33,6 @@ class Normalizer(PkgFileProcessor):
 
     def process(self,arcname, content):
         lines = content.splitlines()
-        element= self._get_pc_elements(lines)
         self._libdir( lines)
         self._dependency_libs( lines)
         return '\n'.join(lines)
@@ -40,7 +40,7 @@ class Normalizer(PkgFileProcessor):
     def _libdir(self,lines):
         for i in range(len(lines)):
             line = lines[i]
-            m = P_libdir.match(line)
+            m = self.P_libdir.match(line)
             if not m :
                 continue
             value  = m.group('value')
@@ -50,7 +50,8 @@ class Normalizer(PkgFileProcessor):
 
     def _dependency_libs(self,lines):
         for i in range(len(lines)):
-            m = P_dependency_libs.match(line)
+            line = lines[i]
+            m = self.P_dependency_libs.match(line)
             if not m : continue
             value  = m.group('value')
 
@@ -66,7 +67,7 @@ class Normalizer(PkgFileProcessor):
                 if flag in ['','-L','-R']:
                     d = val.lstrip('=')
                     if os.path.isabs(d):
-                        d = relpath( d, pkg.rootd )
+                        d = relpath( d, self.rootd )
                         if d is None:
                             d = val
                         else:
