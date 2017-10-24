@@ -45,6 +45,28 @@ if platform.system() == 'Windows':
     cerbero.build.build.BuildType.AUTOCMAKE= \
     cerbero.build.hijack.cmake.AutoCMake
 
+import cerbero.commands
+_old_load_commands = cerbero.commands.load_commands
+
+def _load_commands(subparsers):
+    _old_load_commands(subparsers)
+
+    
+    import os
+    commands_dir = os.path.abspath(os.path.dirname(__file__)+'/cpm/commands')
+
+    for name in os.listdir(commands_dir):
+        name, extension = os.path.splitext(name)
+        if extension != '.py':
+            continue
+        try:
+            __import__('cerbero.cpm.commands.%s' % name)
+        except ImportError, e:
+            m.warning("Error importing command %s:\n %s" % (name, e))
+    for command in cerbero.commands._commands.values():
+        command.add_parser(subparsers)
+
+cerbero.commands.load_commands = _load_commands
 
 
 _old_shell_download = shell.download
