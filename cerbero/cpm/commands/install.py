@@ -208,5 +208,5 @@ class Installer(Command):
 
    
 
-print '-------------------------------REGIST COMMAND----------'
+
 register_command(Installer)

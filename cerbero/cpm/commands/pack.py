@@ -26,7 +26,7 @@ from cerbero.tools.mkpkg import Packager, BuildTree
 from cerbero.utils import messages as m
 from cerbero.cpm.utils import SHA1
 from cerbero.cpm.buildsystem import BuildSystem
-from cerbero.cpm.packager import  Description,Component
+from cerbero.cpm.packager import  Description,Component,PkgFile
 from cerbero.cpm.packager import  Pack as MakePackage
 
 
@@ -79,7 +79,7 @@ class Pack(Command):
                 print '   [OK]'
                 i +=1
         self._gen_desc_yaml(config,args)
-        m.message(' done !')
+        
 
 
 
@@ -166,6 +166,7 @@ class Pack(Command):
             component = components.get(name,{})
             component['version'] = recipe.version
 
+            deps={}
 
             for ctype in ['runtime','devel']:
                 desc = Description()
@@ -182,11 +183,29 @@ class Pack(Command):
                 assert os.path.exists(path),'''
                 package %s not exists!
                 '''%filename
+                #dependencies
+                
+                
+                pkg = PkgFile(config.prefix)
+                pkg.open( path,'r')
+                content = pkg.read('.desc')
+                pkg_desc = Description()
+                pkg_desc.load( content )
+                deps[ctype] = pkg_desc.dependencies
+                
+
+
 
                 component[ctype]={'filename':filename,
-                    'SHA1':SHA1(path) }
+                    'SHA1':SHA1(path)}
+
+            assert 0 == cmp( deps['runtime'] ,deps['devel'] ),'''
+            runtime lib diff with devel
+            '''
+            component['dependencies'] = deps['devel']
 
             components[name] = component
+            
         info['component']= components
 
         import yaml

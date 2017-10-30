@@ -39,13 +39,13 @@ class Description(object):
 
     _properties=['name','platform',
     'arch','version','type','prefix',
-    'deps']
+    'dependencies']
 
 
     def __init__(self,format='yaml'):
         for name in self._properties:
             setattr(self,name,None)
-        setattr(self,'deps',{})
+        setattr(self,'dependencies',{})
 
 
     def from_dict(self,desc):
@@ -243,7 +243,7 @@ class Component(object):
         self.desc.arch = self.config.arch
         self.desc.version = self.recipe.version
     
-        self.desc.deps=self._deps()
+        self.desc.dependencies=self._deps()
 
 
     def _deps(self):
