@@ -4,6 +4,11 @@ enable_testing()
 
 include (CMakeParseArguments)
 
+macro( TRACE msg )
+  if ( $ENV{AUTOCMAKE_TRACE} MATCHES "ON" )
+      MESSAGE( ${msg} )
+  endif()
+endmacro()
 
 IF(MSVC)
 	ADD_DEFINITIONS( -D_CRT_SECURE_NO_DEPRECATE  )
@@ -148,20 +153,37 @@ macro( autocmake_pkgconfig_init )
 endmacro()
 
 macro( autocmake_check_modules _prefix )
+    TRACE("+autocmake_check_modules ${_prefix}")
     set( ${_prefix}_LIBS)
 	set( ${_prefix}_LINK_DIRECTORIES)
 	set( ${_prefix}_INCLUDE_DIRECTORIES)
 
     foreach( _pkg ${ARGN} )
-	    pkg_check_modules( ${_pkg} ${_pkg} REQUIRED)
+		pkg_check_modules( ${_pkg} ${_pkg} REQUIRED)
+		TRACE("   ${_pkg}_CFLAGS : ${${_pkg}_CFLAGS}")
+		TRACE("   ${_pkg}_INCLUDEDIR : ${${_pkg}_INCLUDEDIR}")
+		TRACE("   ${_pkg}_INCLUDE_DIRS : ${${_pkg}_INCLUDE_DIRS}")
+		TRACE("   ${_pkg}_LIBRARY_DIRS : ${${_pkg}_LIBRARY_DIRS}")
 		list(APPEND ${_prefix}_LINK_DIRECTORIES ${${_pkg}_LIBRARY_DIRS} )
 		list(APPEND ${_prefix}_INCLUDE_DIRECTORIES ${${_pkg}_INCLUDE_DIRS} )
-		#MESSAGE("_pc_inc ${_pkg} : ${${_pkg}_INCLUDE_DIRS} ")
-		#MESSAGE("_pc_libdir ${_pkg}: ${${_pkg}_LIBRARY_DIRS} ")
+		list(APPEND ${_prefix}_INCLUDE_DIRECTORIES ${${_pkg}_INCLUDEDIR} )
 		list(APPEND ${_prefix}_LIBS ${${_pkg}_LIBRARIES})
+
 	endforeach()
-	#MESSAGE("*_LINK_DIRECTORIES*" ${${_prefix}_LINK_DIRECTORIES})
-	#MESSAGE("*_INCLUDE_DIRECTORIES*" ${${_prefix}_INCLUDE_DIRECTORIES})
+	list(REMOVE_DUPLICATES ${_prefix}_LINK_DIRECTORIES)
+	list(REMOVE_DUPLICATES ${_prefix}_INCLUDE_DIRECTORIES)
+	list(REMOVE_DUPLICATES ${_prefix}_LIBS)
+	foreach(cat LINK_DIRECTORIES;INCLUDE_DIRECTORIES;LIBS)
+	   	TRACE("<${cat}>")		
+		foreach(item ${${_prefix}_${cat}})
+			TRACE("   ${item}")		
+		endforeach()
+	 
+	endforeach(cat )
+	TRACE("-autocmake_check_modules ${_prefix}")
+	
+
+	
 endmacro()
 
 macro( autocmake_add_library _name )

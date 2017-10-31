@@ -41,7 +41,7 @@ new file mode 100644
 index 0000000..ad6a746
 --- /dev/null
 +++ b/ext/sctp/CMakeLists.txt
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,30 @@
 +
 +PROJECT( libgstsctp )
 +
@@ -55,7 +55,7 @@ index 0000000..ad6a746
 +
 +
 +include_directories( ${CMAKE_HOME_DIRECTORY}/gst-libs )
-+autocmake_check_modules(this gstreamer-1.0
++autocmake_check_modules(this gstreamer-1.0  glib-2.0
 +                      gstreamer-base-1.0 
 +					  libusrsctp)
 +
@@ -66,6 +66,9 @@ index 0000000..ad6a746
 +add_library ( libgstsctp SHARED ${FILE_SOURCES} )
 +set_target_properties( libgstsctp PROPERTIES PREFIX "" ) 
 +target_link_libraries( libgstsctp ${this_LIBS} gstsctp-1.0 )
++if( MSVC )
++ target_link_libraries( libgstsctp ws2_32 )
++endif()
 +
 +install(TARGETS libgstsctp RUNTIME DESTINATION lib/gstreamer-1.0/  LIBRARY DESTINATION lib/gstreamer-1.0/ )
 +add_dependencies( libgstsctp gstsctp-1.0 )
@@ -81,7 +84,7 @@ index 0000000..0529729
 +file( GLOB _SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c )
 +file( GLOB _HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h )
 +
-+autocmake_check_modules( this gstreamer-1.0)
++autocmake_check_modules( this gstreamer-1.0 libusrsctp)
 +include_directories( ${this_INCLUDE_DIRECTORIES} )
 +link_directories( ${this_LINK_DIRECTORIES} )
 +
@@ -141,7 +144,7 @@ index 0000000..02da7ec
 +		   ${CMAKE_CURRENT_SOURCE_DIR}/*.h 
 +    )
 +
-+autocmake_check_modules(this  
++autocmake_check_modules(this  libusrsctp
 +                      gstreamer-1.0 
 +                      gstreamer-base-1.0 
 +					  gstreamer-video-1.0)
