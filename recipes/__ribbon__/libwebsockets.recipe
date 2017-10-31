@@ -15,6 +15,7 @@ class Recipe(recipe.Recipe):
     #tarball_dirname = 'v%s'%version
     url = 'https://github.com/warmcat/libwebsockets/archive/v%s.tar.gz' % version
     licenses = [License.BSD_like]
+    requires_non_src_build = False
 
     #add_host_build_target = False
     #can_use_configure_cache = False
@@ -23,7 +24,7 @@ class Recipe(recipe.Recipe):
     #if os.getenv('MSYSTEM'):
     #    patches = ['libwebsockets/0001-AutoCMake-adaptation.patch']
     patches = ['libwebsockets/0001-add-autocmake-mode-pkg-config-file.patch']
-    #deps = ['libuv']
+    deps = ['libuv','zlib']
     #
    # if os.getenv('MSYSTEM'):
     #    files_libs = ['websockets_static', 'zlib_internal']
@@ -40,10 +41,11 @@ class Recipe(recipe.Recipe):
         self.configure_options += " -DLWS_WITH_SSL=ON "\
                                   " -DLWS_WITH_LIBUV=ON "\
                                   " -DLWS_WITH_SHARED=ON"\
-                                  " -DLWS_LINK_TESTAPPS_DYNAMIC=ON"
+                                  " -DLWS_LINK_TESTAPPS_DYNAMIC=ON"\
+                                  " -DLWS_USE_BUNDLED_ZLIB=OFF"
         if self.platform == Platform.WINDOWS:
             libuv='%s/lib/libuv.lib'%self.config.prefix
-            libssl='\\"{0}/lib/crypto.lib;{0}/lib/ssl.lib\\"'.format(self.config.prefix)
+            libssl='\"{0}/lib/crypto.lib;{0}/lib/ssl.lib\"'.format(self.config.prefix)
         else:
             libuv='%s/lib/libuv.so'%self.config.prefix
             libssl='\"{0}/lib/libssl.so;{0}/lib/libcrypto.so\"'.format(self.config.prefix)

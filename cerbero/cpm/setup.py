@@ -83,7 +83,7 @@ class Component(Base):
             name = desc['name']
             version = desc['version']
             ptype = desc['type']
-            instd = os.path.join(self.prefix,'.inst',ptype,'%s-%s'%(name,version))
+            instd = os.path.join(self.prefix,'.inst',ptype,'%s'%name)
             if os.path.exists(instd):
                 m.warning('%s %s already installed, we will overwrite it.'%(name,version))
                 
@@ -111,7 +111,7 @@ class Component(Base):
             version = info.get('version',None)
             for ptype in info.get('type',['runtime']):
                 if not version:
-                    fpath = os.path.join(self.prefix,'.inst',ptype,'*{0}-*'.format(name))
+                    fpath = os.path.join(self.prefix,'.inst',ptype,'*{0}*'.format(name))
                     found = glob.glob(fpath)
                     print found
                     return

@@ -127,10 +127,13 @@ class AutoCMake (MakefilesBase):
         if self.config_src_dir != self.make_dir:
             self.configure_options += ' %s '%self.config_src_dir
 
+        prefix= self.config.prefix
+        libdir= self.config.libdir
+
 
         self._call(self.configure_tpl % {'config-sh': self.config_sh,
-            'prefix': to_unixpath(self.config.prefix),
-            'libdir': to_unixpath(self.config.libdir),
+            'prefix': prefix,#to_unixpath(self.config.prefix),
+            'libdir': libdir,#to_unixpath(self.config.libdir),
             'host': self.config.host,
             'target': self.config.target,
             'build': self.config.build,

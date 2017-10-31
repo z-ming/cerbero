@@ -1,7 +1,7 @@
 # -*- Mode: Python -*- vi:si:et:sw=4:sts=4:ts=4:syntax=python
 
 
-class SDKPackage(custom.GStreamer, package.SDKPackage):
+class SDKPackage(custom.Ribbon, package.SDKPackage):
 
     name = "ribbon"
     shortdesc = "Ribbon system"
@@ -12,7 +12,8 @@ class SDKPackage(custom.GStreamer, package.SDKPackage):
     ignore_package_prefix = True
     packages =[
                # (name, required, selected)
-               ('base-system-1.0', True, True),
-               ('base-crypto', True, True)
+               ('communicator', True, True),
+			   ('openwebrtc', True, True)
+               
               ]
 

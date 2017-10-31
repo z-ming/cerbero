@@ -44,11 +44,12 @@ class Installer(Command):
 
             ArgparseArgument('--type', type=str,
                 default='component',choices=['component','build','bundle','build-tools'],
-                help=_('type of the object')),
+                help=_('type of the object'))
 
-            ArgparseArgument('--prefix', type=str,
-                default='',
-                help=_('prefix of install directory.'))]
+            #ArgparseArgument('--prefix', type=str,
+            #    default='',
+            #    help=_('prefix of install directory.'))
+            ]
         
         Command.__init__(self, args)
 
@@ -59,13 +60,13 @@ class Installer(Command):
 
         if args.type == 'component':
             from cerbero.cpm.setup import Component
-            installer = Component( args.prefix)
+            installer = Component( config.prefix)
             repo = args.repo
             for filename in args.elements:
                 filter[filename] ={}
         elif args.type == 'build':
             from cerbero.cpm.setup import Build
-            installer = Build( args.prefix)
+            installer = Build( config.prefix)
             repo = args.repo
             #for filename in args.elements:
             #    filter[filename] ={}

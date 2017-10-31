@@ -21,6 +21,9 @@ class Recipe(recipe.Recipe):
     version = '1.12.0'
     stype = SourceType.TARBALL
     btype = BuildType.MAKEFILE
+    import platform
+    if platform.system() == 'Windows':
+        btype = BuildType.AUTOCMAKE
     patches = ['libuv/0001-msvs-2015-build.patch']
     config_sh = './configure'
     configure_tpl = "%(config-sh)s --prefix=%(prefix)s --libdir=%(libdir)s %(options)s"
@@ -28,6 +31,7 @@ class Recipe(recipe.Recipe):
     tarball_dirname = 'libuv-1.12.0'
     url = 'https://github.com/libuv/libuv/archive/v1.12.0.tar.gz'
     licenses = [License.BSD_like]
+    requires_non_src_build = False
 
     
     #
@@ -42,9 +46,9 @@ class Recipe(recipe.Recipe):
 
 
             self.make_install='echo '
-            self.config_sh = 'echo libuv configure && ./msvs-build.bat shared nobuild %s %s '%(build,arch)
+            self.config_sh = 'msvs-build.bat shared nobuild %s %s '%(build,arch)
             self.configure_tpl = "%(config-sh)s"
-            self.make = 'echo libuv build msvs 2015 && ./msvs-build.bat shared noprojgen %s %s '%(build,arch)
+            self.make = 'msvs-build.bat shared noprojgen %s %s '%(build,arch)
 
 
     def configure(self):

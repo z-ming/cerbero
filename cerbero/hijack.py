@@ -82,3 +82,39 @@ if cac.get('mirror',None):
         else:
             _old_shell_download( url,destination,recursive,check_cert,overwrite)
     shell.download = _hijack_download
+
+
+#
+# Installed one will not build
+#
+#    def get_recipe(self, name):
+#        '''
+#        Gets a recipe from its name
+#
+#        @param name: name of the recipe
+#        @type name: str
+#        '''
+#        if name in self._invalid_recipes:
+#            raise self._invalid_recipes[name]
+#        if name not in self.recipes:
+#            raise RecipeNotFoundError(name)
+#        return self.recipes[name]
+#
+import cerbero.build.hijack.cookbook
+#_old_CookBook_get_recipe = cerbero.build.cookbook.CookBook.get_recipe
+#
+#def _CookBook_get_recipe(self,name):
+#    from cerbero.errors import RecipeNotFoundError
+#
+#    try :
+#        return _old_CookBook_get_recipe(self,name)
+#    except RecipeNotFoundError, e:
+#        print '-----------%s----------'% type(e)
+#        print e
+#        print '--------RecipeNotFoundError-------------'
+#        
+#    except Exception,e:
+#        print '-----------%s----------'% type(e)
+#        print e
+#        print '---------------------'
+#cerbero.build.cookbook.CookBook.get_recipe =_CookBook_get_recipe
